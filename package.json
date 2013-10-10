@@ -1,0 +1,15 @@
+{
+  "name": "blockchain",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "author": "Me",
+  "license": "MIT",
+  "dependencies": {
+    "express": "~3.4.0",
+    "maxmind": "~0.3.2",
+    "engine.io": "~0.7.9",
+    "primus": "~1.4.3",
+    "ws": "~0.4.31"
+  }
+}
