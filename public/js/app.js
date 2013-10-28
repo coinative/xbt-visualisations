@@ -7,7 +7,7 @@ var APP = {
       document.body.appendChild(message);
       document.body.style.background = '#000000';
       return;
-    } 
+    }
 
     var container = document.getElementById('container');
     var globe = new DAT.Globe(container);
@@ -19,7 +19,7 @@ var APP = {
 
     animate();
 
-    var primus = Primus.connect('192.168.0.128:3000');
+    var primus = Primus.connect();
     primus.on('data', function (block) {
       var key = block.country;
       if (block.city) {
