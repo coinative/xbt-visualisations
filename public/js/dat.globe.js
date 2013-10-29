@@ -29,7 +29,7 @@ DAT.Globe = function(container, colorFn) {
         'varying vec3 vNormal;',
         'varying vec2 vUv;',
         'void main() {',
-          'gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+          'gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
           'vNormal = normalize( normalMatrix * normal );',
           'vUv = uv;',
         '}'
@@ -39,7 +39,7 @@ DAT.Globe = function(container, colorFn) {
         'varying vec3 vNormal;',
         'varying vec2 vUv;',
         'void main() {',
-          'vec3 diffuse = texture2D( texture, vUv ).xyz;',
+          'vec3 diffuse = texture2D( texture, vUv + vec2(0.472, 0.008)).xyz;',
           'float intensity = 1.05 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) );',
           'vec3 atmosphere = vec3( 1.0, 1.0, 1.0 ) * pow( intensity, 3.0 );',
           'gl_FragColor = vec4( diffuse + atmosphere, 1.0 );',
@@ -67,10 +67,11 @@ DAT.Globe = function(container, colorFn) {
 
   var camera, scene, sceneAtmosphere, renderer, w, h;
   var vector, mesh, atmosphere, point;
+  var particleGeo, particleColors;
 
   var overRenderer;
 
-  var imgDir = '../images/';
+  var imgDir = '/images/';
 
   var curZoomSpeed = 0;
   var zoomSpeed = 50;
@@ -105,7 +106,10 @@ DAT.Globe = function(container, colorFn) {
     shader = Shaders['earth'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
-    uniforms['texture'].value = THREE.ImageUtils.loadTexture(imgDir + 'world' + '.jpg');
+    //uniforms['texture'].value = THREE.ImageUtils.loadTexture(imgDir + 'map_outline.png');
+    var txt = THREE.ImageUtils.loadTexture(imgDir + 'map_outline.png');
+    txt.wrapS = THREE.RepeatWrapping;
+    uniforms['texture'].value = txt;
 
     material = new THREE.ShaderMaterial({
       uniforms: uniforms,
@@ -114,7 +118,8 @@ DAT.Globe = function(container, colorFn) {
     });
 
     mesh = new THREE.Mesh(geometry, material);
-    mesh.rotation.y = Math.PI;
+    //mesh.rotation.y = Math.PI + 0.17;
+    //mesh.rotation.z = -0.0275;
     scene.add(mesh);
 
     shader = Shaders['atmosphere'];
@@ -175,6 +180,7 @@ DAT.Globe = function(container, colorFn) {
     }
 
     var subgeo = new THREE.Geometry();
+
     for (i = 0; i < data.length; i += step) {
       lat = data[i];
       lng = data[i + 1];
@@ -183,31 +189,9 @@ DAT.Globe = function(container, colorFn) {
       size = size*200;
       addPoint(lat, lng, size, color, subgeo, i === (data.length - 3));
     }
-    if (opts.animated) {
-      this._baseGeometry.morphTargets.push({'name': opts.name, vertices: subgeo.vertices});
-    } else {
-      this._baseGeometry = subgeo;
-    }
+
+    this._baseGeometry = subgeo;
   };
-
-  function createPoints() {
-    var points;
-
-    if (!this._baseGeometry) return;
-
-    points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      vertexColors: THREE.FaceColors,
-      morphTargets: false
-    }));
-
-    this.points = points;
-    scene.add(points);
-  }
-
-  function removeData() {
-    if (this.points) scene.remove(this.points);
-  }
 
   function addPoint(lat, lng, size, color, subgeo, rotate) {
     var phi = (90 - lat) * Math.PI / 180;
@@ -226,6 +210,33 @@ DAT.Globe = function(container, colorFn) {
     }
 
     THREE.GeometryUtils.merge(subgeo, point);
+  }
+
+  function createPoints() {
+    var points;
+
+    if (!this._baseGeometry) return;
+
+    if (this._baseGeometry.morphTargets.length < 8) {
+      var padding = 8-this._baseGeometry.morphTargets.length;
+
+      for(var i=0; i<=padding; i++) {
+        this._baseGeometry.morphTargets.push({'name': 'morphPadding'+i, vertices: this._baseGeometry.vertices});
+      }
+    }
+
+    points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      vertexColors: THREE.FaceColors,
+      morphTargets: true
+    }));
+
+    this.points = points;
+    scene.add(this.points);
+  }
+
+  function removeData() {
+    if (this.points) scene.remove(this.points);
   }
 
   function onMouseDown(event) {
