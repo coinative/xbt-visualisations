@@ -162,8 +162,6 @@ DAT.Globe = function(container, colorFn) {
   addData = function(data, opts) {
     var lat, lng, size, color, i, step, colorFnWrapper;
 
-    opts.animated = opts.animated || false;
-    this.is_animated = opts.animated;
     opts.format = opts.format || 'magnitude'; // other option is 'legend'
     console.log(opts.format);
     if (opts.format === 'magnitude') {
@@ -174,26 +172,6 @@ DAT.Globe = function(container, colorFn) {
       colorFnWrapper = function(data, i) { return colorFn(data[i+3]); }
     } else {
       throw('error: format not supported: '+opts.format);
-    }
-
-    if (opts.animated) {
-      if (this._baseGeometry === undefined) {
-        this._baseGeometry = new THREE.Geometry();
-        for (i = 0; i < data.length; i += step) {
-          lat = data[i];
-          lng = data[i + 1];
-          size = data[i + 2];
-          color = colorFnWrapper(data,i);
-          //size = 0;
-          addPoint(lat, lng, size, color, this._baseGeometry);
-        }
-      }
-      if(this._morphTargetId === undefined) {
-        this._morphTargetId = 0;
-      } else {
-        this._morphTargetId += 1;
-      }
-      opts.name = opts.name || 'morphTarget'+this._morphTargetId;
     }
 
     var subgeo = new THREE.Geometry();
@@ -217,30 +195,11 @@ DAT.Globe = function(container, colorFn) {
 
     if (!this._baseGeometry) return;
 
-    if (this.is_animated === false) {
-      console.log('here');
-      points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        vertexColors: THREE.FaceColors,
-        morphTargets: false
-      }));
-    } 
-    else {
-      if (this._baseGeometry.morphTargets.length < 8) {
-        var padding = 8-this._baseGeometry.morphTargets.length;
-
-        for(var i=0; i<=padding; i++) {
-          console.log('padding',i);
-          this._baseGeometry.morphTargets.push({'name': 'morphPadding'+i, vertices: this._baseGeometry.vertices});
-        }
-      }
-
-      points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        vertexColors: THREE.FaceColors,
-        morphTargets: true
-      }));
-    }
+    points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      vertexColors: THREE.FaceColors,
+      morphTargets: false
+    }));
 
     this.points = points;
     scene.add(points);
