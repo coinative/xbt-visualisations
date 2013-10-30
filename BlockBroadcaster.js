@@ -37,7 +37,10 @@ BlockBroadcaster.prototype.start = function () {
       latitude: location.latitude,
       longitude: location.longitude,
       city: location.city,
-      country: location.countryCode
+      country: location.countryCode,
+      amount: data.x.out.reduce(function (memo, out) {
+        return memo + parseInt(out.value, 10);
+      }, 0) / 100000000
     };
 
     // send to server

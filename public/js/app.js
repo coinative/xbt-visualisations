@@ -13,39 +13,30 @@ var APP = {
     var globe = new DAT.Globe(container);
     var data = {};
 
-    function animate() {
+    /*function animate() {
       requestAnimationFrame(animate);
     }
 
-    animate();
+    animate();*/
 
     var primus = Primus.connect();
-    primus.on('data', function (block) {
-      var key = block.country;
-      if (block.city) {
-        key = key + ', ' + block.city;
-      }
+    primus.on('data', function (tx) {
+      highlightCountry(tx.country,  tx.amount);
+      incSpike(tx.latitude, tx.longitude);
 
-      if (!data[key]) {
-        data[key] = { count: 0 };
-        data[key].longitude = block.longitude;
-        data[key].latitude = block.latitude;
-        highlightCountry(block.country);
-      }
-
-      data[key].count++;
+      /*data[key].count++;
 
 
       var points = [];
       _.each(data, function (place) {
         points.push(place.latitude);
         points.push(place.longitude);
-        points.push(0.02 * place.count);
+        points.push(0.1 * Math.log(place.count));
       });
 
       globe.addData(points, { format: 'magnitude' });
       globe.removeData();
-      globe.createPoints();
+      globe.createPoints();*/
     });
 
     globe.animate();

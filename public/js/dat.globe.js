@@ -14,11 +14,12 @@
 var DAT = DAT || {};
 
 var highlightCountry;
+var incSpike;
 
 DAT.Globe = function(container, colorFn) {
   colorFn = colorFn || function(x) {
     var c = new THREE.Color();
-    c.setHSV( ( 0.6 - ( x * 0.5 ) ), 1.0, 1.0 );
+    c.setHSV( x, 1.0, 1.0 );
     return c;
   };
 
@@ -126,14 +127,63 @@ DAT.Globe = function(container, colorFn) {
   var padding = 40;
   var PI_HALF = Math.PI / 2;
 
+  function clamp(x, min, max) {
+    return Math.min(Math.max(x, min), max);
+  }
+
   var higlightedCountries = {};
 
   Object.keys(countryColorMap).forEach(function (countryCode) {
-    higlightedCountries[countryCode] = { r: 10, g: 40, b: 10 };
+    higlightedCountries[countryCode] = { amount: 0, h: 0, l: 0 };
   });
 
-  highlightCountry = function(countryCode) {
-    higlightedCountries[countryCode] = { r: 255, g: 40, b: 10 };
+  highlightCountry = function(countryCode, amount) {
+    var country = higlightedCountries[countryCode];
+    country.amount += amount;
+    country.h = clamp(Math.floor(Math.log(country.amount) * 20), 0, 240);
+    country.l = 100;
+  }
+
+  var spikes = {};
+
+  incSpike = function (latitude, longitude) {
+    var key = '' + latitude + longitude;
+    var spike = spikes[key];
+    var geometry;
+    if (!spike) {
+      geometry = new THREE.CubeGeometry(0.75, 0.75, 1, 1, 1, 1, undefined, { px: true, nx: true, py: true, ny: true, pz: false, nz: true});
+      geometry.applyMatrix( new THREE.Matrix4().makeTranslation(0,0,0.5) );
+      geometry.dynamic = true;
+
+      spike = spikes[key] = {
+        mesh: new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: THREE.FaceColors })),
+        count: 1
+      };
+
+      var phi = (90 - latitude) * Math.PI / 180;
+      var theta = (180 - longitude) * Math.PI / 180;
+
+      spike.mesh.position.x = 200 * Math.sin(phi) * Math.cos(theta);
+      spike.mesh.position.y = 200 * Math.cos(phi);
+      spike.mesh.position.z = 200 * Math.sin(phi) * Math.sin(theta);
+      spike.mesh.lookAt(mesh.position);
+
+      for (var i = 0; i < geometry.faces.length; i++) {
+        geometry.faces[i].color = colorFn(0.5);
+      }
+
+      scene.add(spike.mesh);
+    } else {
+      geometry = spike.mesh.geometry;
+      spike.count++;
+    }
+    spike.mesh.scale.z = -Math.sqrt(spike.count) * 3;
+    var redAt = 200;
+    for (var i = 0; i < geometry.faces.length; i++) {
+      geometry.faces[i].color = colorFn(clamp((redAt - spike.count) / (5 * redAt), 0, 0.2)); // 0.0 -> 0.2
+    }
+    geometry.colorsNeedUpdate = true;
+    spike.mesh.updateMatrix();
   }
 
   function init() {
@@ -152,7 +202,13 @@ DAT.Globe = function(container, colorFn) {
     scene = new THREE.Scene();
     sceneAtmosphere = new THREE.Scene();
 
-    var geometry = new THREE.SphereGeometry(200, 40, 30);
+    var planetGeometry = new THREE.SphereGeometry(200, 40, 30);
+    planetGeometry.dynamic = true;
+
+    /*setTimeout(function () {
+      geometry.vertices.forEach(function (v) { v.x = 0; v.y = 0; v.z = 0; })
+      geometry.verticesNeedUpdate = true;
+    }, 2000);*/
 
     shader = Shaders['earth-indexed'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
@@ -170,7 +226,8 @@ DAT.Globe = function(container, colorFn) {
 
     lookupCanvas = document.createElement('canvas');
     lookupCanvas.width = 256;
-    lookupCanvas.height = 1;
+    lookupCanvas.height = 10;
+    document.getElementsByTagName('body')[0].appendChild(lookupCanvas);
     lookupTexture = new THREE.Texture(lookupCanvas);
     lookupTexture.magFilter = THREE.NearestFilter;
     lookupTexture.minFilter = THREE.NearestFilter;
@@ -182,9 +239,7 @@ DAT.Globe = function(container, colorFn) {
       fragmentShader: shader.fragmentShader
     });
 
-    mesh = new THREE.Mesh(geometry, material);
-    //mesh.rotation.y = Math.PI + 0.17;
-    //mesh.rotation.z = -0.0275;
+    mesh = new THREE.Mesh(planetGeometry, material);
     scene.add(mesh);
 
     shader = Shaders['atmosphere'];
@@ -197,11 +252,11 @@ DAT.Globe = function(container, colorFn) {
       side: THREE.BackSide
     });
 
-    mesh = new THREE.Mesh(geometry, material);
+    mesh = new THREE.Mesh(planetGeometry, material);
     mesh.scale.x = mesh.scale.y = mesh.scale.z = 1.1;
     sceneAtmosphere.add(mesh);
 
-    geometry = new THREE.CubeGeometry(0.75, 0.75, 1, 1, 1, 1, undefined, { px: true, nx: true, py: true, ny: true, pz: false, nz: true});
+    var geometry = new THREE.CubeGeometry(0.75, 0.75, 1, 1, 1, 1, undefined, { px: true, nx: true, py: true, ny: true, pz: false, nz: true});
     geometry.applyMatrix( new THREE.Matrix4().makeTranslation(0,0,0.5) );
 
     point = new THREE.Mesh(geometry);
@@ -229,7 +284,7 @@ DAT.Globe = function(container, colorFn) {
     }, false);
   }
 
-  addData = function(data, opts) {
+  /*addData = function(data, opts) {
     var lat, lng, size, color, i, step, colorFnWrapper;
 
     opts.format = opts.format || 'magnitude'; // other option is 'legend'
@@ -302,7 +357,7 @@ DAT.Globe = function(container, colorFn) {
 
   function removeData() {
     if (this.points) scene.remove(this.points);
-  }
+  }*/
 
   function onMouseDown(event) {
     event.preventDefault();
@@ -379,24 +434,23 @@ DAT.Globe = function(container, colorFn) {
     distanceTarget = distanceTarget < 350 ? 350 : distanceTarget;
   }
 
+
   function animate() {
     requestAnimationFrame(animate);
 
     var ctx = lookupCanvas.getContext('2d');
-    ctx.clearRect(0, 0, 256, 1);
+    ctx.clearRect(0, 0, 256, 10);
     ctx.fillStyle = 'rgb(10, 10, 40)';
     ctx.fillRect(0, 0, 1, 1);
     Object.keys(higlightedCountries).forEach(function (countryCode) {
-      var color = higlightedCountries[countryCode];
-      var colorIndex = countryColorMap[countryCode];
-      var fillCSS = 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')';
+      var country = higlightedCountries[countryCode];
+      var fillCSS = 'hsl(' + (240 - country.h) + ', 25%, ' + country.l + '%)';
       ctx.fillStyle = fillCSS;
-      ctx.fillRect(colorIndex, 0, 1, 1);
-      if (color.r > 10) {
+      var colorIndex = countryColorMap[countryCode];
+      ctx.fillRect(colorIndex, 0, 1, 10);
+      if (country.l > 50) {
+        country.l -= 2;
         lookupTexture.needsUpdate = true;
-        higlightedCountries[countryCode].r -= 2;
-      } else {
-        higlightedCountries[countryCode] = { r: 10, g: 40, b: 10 };
       }
     });
 
@@ -425,9 +479,9 @@ DAT.Globe = function(container, colorFn) {
   init();
 
   this.animate = animate;
-  this.addData = addData;
+  /*this.addData = addData;
   this.createPoints = createPoints;
-  this.removeData = removeData;
+  this.removeData = removeData;*/
   this.renderer = renderer;
   this.scene = scene;
 
