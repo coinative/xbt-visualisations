@@ -30,9 +30,11 @@ var APP = {
         data[key] = { count: 0 };
         data[key].longitude = block.longitude;
         data[key].latitude = block.latitude;
+        highlightCountry(block.country);
       }
 
       data[key].count++;
+
 
       var points = [];
       _.each(data, function (place) {
