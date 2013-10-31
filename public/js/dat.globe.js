@@ -101,9 +101,8 @@ DAT.Globe = function(container, colorFn) {
         'void main() {',
           'vec4 indexedColor = texture2D(indexedTexture, vUv);',
           'vec4 outlineColor = texture2D(outlineTexture, vUv);',
-          //'vec4 outlineColor = texture2D(outlineTexture, vUv - vec2(0.472, 0.008));',
-          'vec4 diffuse = indexedColor + outlineColor;',
-
+          'vec4 diffuse = indexedColor;',
+          //'vec4 diffuse = indexedColor + outlineColor;',
           'float intensity = 1.05 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) );',
           'vec3 atmosphere = vec3( 1.0, 1.0, 1.0 ) * pow( intensity, 3.0 );',
           'gl_FragColor = diffuse + vec4( atmosphere, 1.0 );',
@@ -395,7 +394,7 @@ DAT.Globe = function(container, colorFn) {
   }
 
   setInterval(function() {
-    target.x += 0.0025;
+    target.x += 0.001;
   }, 50)
 
   function render() {

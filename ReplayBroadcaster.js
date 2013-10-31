@@ -21,26 +21,28 @@ var ReplayBroadcaster = module.exports = function (server) {
 }
 
 ReplayBroadcaster.prototype.start = function () {
-  var interval = setInterval(function () {
-    if (this.txs.length === 0) {
-      return clearInterval(interval);
-    }
-    var tx = this.txs.pop();
-    var location = maxmind.getLocation(tx.relayed_by);
+  setTimeout(function () {
+    var interval = setInterval(function () {
+      if (this.txs.length === 0) {
+        return clearInterval(interval);
+      }
+      var tx = this.txs.pop();
+      var location = maxmind.getLocation(tx.relayed_by);
 
-    if (!location) return;
+      if (!location) return;
 
-    var payload = {
-      latitude: location.latitude,
-      longitude: location.longitude,
-      city: location.city,
-      country: location.countryCode,
-      amount: tx.out.reduce(function (memo, out) {
-        return memo + parseInt(out.value, 10);
-      }, 0) / 100000000
-    };
+      var payload = {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        city: location.city,
+        country: location.countryCode,
+        amount: tx.out.reduce(function (memo, out) {
+          return memo + parseInt(out.value, 10);
+        }, 0) / 100000000
+      };
 
-    console.log('SENDING', payload);
-    this.primus.write(payload);
-  }.bind(this), 5);
+      console.log('SENDING', payload);
+      this.primus.write(payload);
+    }.bind(this), process.argv[3] || 5);
+  }.bind(this), 5000);
 };

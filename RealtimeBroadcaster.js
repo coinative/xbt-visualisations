@@ -12,7 +12,6 @@ var BlockBroadcaster = module.exports = function (server) {
 }
 
 BlockBroadcaster.prototype.start = function () {
-  var self = this;
   var ws = new WebSocket('ws://ws.blockchain.info/inv');
 
   ws.on('open', function () {
@@ -45,8 +44,8 @@ BlockBroadcaster.prototype.start = function () {
 
     // send to server
     console.log('SENDING', payLoad);
-    self.primus.write(payLoad);
-  });
+    this.primus.write(payLoad);
+  }.bind(this));
 
   ws.on('error', function (err) {
     console.log('ERROR', err);

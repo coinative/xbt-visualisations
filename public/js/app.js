@@ -20,13 +20,13 @@ var APP = {
       data.sort(function (a, b) {
         return a.amount < b.amount ? -1 : a.amount > b.amount ? 1 : 0;
       });
-      //d3Graphs.drawBarGraph(data);
+      d3Graphs.drawBarGraph(data);
     }, 500)
 
     var primus = Primus.connect();
     primus.on('data', function (tx) {
-      //highlightCountry(tx.country,  tx.amount);
-      //incSpike(tx.latitude, tx.longitude);
+      highlightCountry(tx.country,  tx.amount);
+      incSpike(tx.latitude, tx.longitude);
 
       var country = _.find(data, function (d) {
         return d.country === tx.country;
