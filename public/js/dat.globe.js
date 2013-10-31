@@ -75,14 +75,14 @@ DAT.Globe = function(container, colorFn) {
           'float intensity = 1.05 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) );',
           'vec3 atmosphere = vec3( 1.0, 1.0, 1.0 ) * pow( intensity, 3.0 );',
           'gl_FragColor = diffuse + vec4( atmosphere, 1.0 );',
-
-          //'gl_FragColor = diffuse;',
         '}'
       ].join('\n')
     },
     'earth' : {
       uniforms: {
-        'texture': { type: 't', value: null }
+        'outlineTexture': { type: 't', value: null },
+        'indexedTexture': { type: 't', value: null },
+        'lookupTexture': { type: 't', value: null }
       },
       vertexShader: [
         'varying vec3 vNormal;',
@@ -90,18 +90,23 @@ DAT.Globe = function(container, colorFn) {
         'void main() {',
           'gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
           'vNormal = normalize( normalMatrix * normal );',
-          'vUv = uv;',
+          'vUv = uv + vec2(0.472, 0.008);',
         '}'
       ].join('\n'),
       fragmentShader: [
-        'uniform sampler2D texture;',
+        'uniform sampler2D outlineTexture;',
+        'uniform sampler2D indexedTexture;',
         'varying vec3 vNormal;',
         'varying vec2 vUv;',
         'void main() {',
-          'vec3 diffuse = texture2D( texture, vUv + vec2(0.472, 0.008)).xyz;',
+          'vec4 indexedColor = texture2D(indexedTexture, vUv);',
+          'vec4 outlineColor = texture2D(outlineTexture, vUv);',
+          //'vec4 outlineColor = texture2D(outlineTexture, vUv - vec2(0.472, 0.008));',
+          'vec4 diffuse = indexedColor + outlineColor;',
+
           'float intensity = 1.05 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) );',
           'vec3 atmosphere = vec3( 1.0, 1.0, 1.0 ) * pow( intensity, 3.0 );',
-          'gl_FragColor = vec4( diffuse + atmosphere, 1.0 );',
+          'gl_FragColor = diffuse + vec4( atmosphere, 1.0 );',
         '}'
       ].join('\n')
     },
@@ -164,10 +169,6 @@ DAT.Globe = function(container, colorFn) {
       spike.mesh.position.z = position.z;
       spike.mesh.lookAt(earth.position);
 
-      for (var i = 0; i < geometry.faces.length; i++) {
-        geometry.faces[i].color = colorFn(0.5);
-      }
-
       scene.add(spike.mesh);
     } else {
       geometry = spike.mesh.geometry;
@@ -210,6 +211,7 @@ DAT.Globe = function(container, colorFn) {
     outlineTexture.wrapS = THREE.RepeatWrapping;
     uniforms['outlineTexture'].value = outlineTexture;
 
+    //var indexedTexture = THREE.ImageUtils.loadTexture('/images/world.jpg');
     var indexedTexture = THREE.ImageUtils.loadTexture('/images/map_indexed.png');
     indexedTexture.wrapS = THREE.RepeatWrapping;
     indexedTexture.magFilter = THREE.NearestFilter;
@@ -217,6 +219,7 @@ DAT.Globe = function(container, colorFn) {
     uniforms['indexedTexture'].value = indexedTexture;
 
     lookupCanvas = document.createElement('canvas');
+    lookupCanvas.className = 'lookupCanvas';
     lookupCanvas.width = 256;
     lookupCanvas.height = 10;
     document.getElementsByTagName('body')[0].appendChild(lookupCanvas);
@@ -390,6 +393,10 @@ DAT.Globe = function(container, colorFn) {
 
     render();
   }
+
+  setInterval(function() {
+    target.x += 0.0025;
+  }, 50)
 
   function render() {
     zoom(curZoomSpeed);

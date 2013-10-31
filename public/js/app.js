@@ -12,7 +12,6 @@ var APP = {
     var container = document.getElementById('container');
     var globe = new DAT.Globe(container);
     var data = [];
-    var cumulativeTotal = 0;
     var changed = false;
 
     setInterval(function () {
@@ -21,44 +20,27 @@ var APP = {
       data.sort(function (a, b) {
         return a.amount < b.amount ? -1 : a.amount > b.amount ? 1 : 0;
       });
-      d3Graphs.drawBarGraph(data, cumulativeTotal);
+      //d3Graphs.drawBarGraph(data);
     }, 500)
 
     var primus = Primus.connect();
     primus.on('data', function (tx) {
-      highlightCountry(tx.country,  tx.amount);
-      incSpike(tx.latitude, tx.longitude);
+      //highlightCountry(tx.country,  tx.amount);
+      //incSpike(tx.latitude, tx.longitude);
 
       var country = _.find(data, function (d) {
         return d.country === tx.country;
       });
 
       if (!country) {
-        country = { country: tx.country, amount: 0 };
+        country = { country: tx.country, amount: 0, count: 0 };
         data.push(country);
       }
 
       changed = true;
 
       country.amount += Math.round(tx.amount * 130);
-      //console.log(tx.country, country.amount);
-      cumulativeTotal += Math.round(tx.amount * 130);
-      //d3Graphs.drawBarGraph(data, cumulativeTotal);
-
-
-      /*data[key].count++;
-
-
-      var points = [];
-      _.each(data, function (place) {
-        points.push(place.latitude);
-        points.push(place.longitude);
-        points.push(0.1 * Math.log(place.count));
-      });
-
-      globe.addData(points, { format: 'magnitude' });
-      globe.removeData();
-      globe.createPoints();*/
+      country.count++;
     });
 
     globe.animate();

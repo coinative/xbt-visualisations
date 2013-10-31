@@ -63,13 +63,19 @@ a:hover {
   height: 55px;
   display: block;
   position: absolute;
-  bottom: 15px;
-  left: 20px;
+  top: 15px;
+  right: 20px;
   background: url(/images/logo.png);
   background-size: 175px 55px;
   background-repeat: no-repeat;
   background-color: transparent;
   cursor: pointer;
+}
+
+.lookupCanvas {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
 }
 
 .overlayCountires {
@@ -96,13 +102,13 @@ a:hover {
   fill: white;
 }
 
-text.totalLabel {
+text.totalLabel, text.countTotalLabel {
   font-size: 23px;
   color: black;
   fill: white;
 }
 
-text.importLabel {
+text.importLabel, text.countLabel {
   color: black;
   fill: #ffa90b;
 }

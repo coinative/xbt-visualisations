@@ -1,6 +1,6 @@
 var http = require('http');
 var express = require('express');
-var BlockListener = require('./BlockBroadcaster');
+var RealtimeBroadcaster = require('./RealtimeBroadcaster');
 var ReplayBroadcaster = require('./ReplayBroadcaster');
 
 var app = express();
@@ -15,7 +15,7 @@ server.on('listening', function () {
   if (process.argv[2] === 'replay') {
     new ReplayBroadcaster(server).start();
   } else {
-    new BlockListener(server).start();
+    new RealtimeBroadcaster(server).start();
   }
 });
 server.listen(port);
