@@ -11,7 +11,8 @@ var APP = {
 
     var container = document.getElementById('container');
     var globe = new DAT.Globe(container);
-    var data = {};
+    var data = [];
+    var cumulativeTotal = 0;
 
     /*function animate() {
       requestAnimationFrame(animate);
@@ -23,6 +24,20 @@ var APP = {
     primus.on('data', function (tx) {
       highlightCountry(tx.country,  tx.amount);
       incSpike(tx.latitude, tx.longitude);
+
+      var country = _.find(data, function (d) {
+        return d.country === tx.country;
+      });
+
+      if (!country) {
+        country = { country: tx.country, amount: 0 };
+        data.push(country);
+      }
+
+      country.amount += Math.round(tx.amount * 180);
+      console.log(tx.country, country.amount);
+      cumulativeTotal += Math.round(tx.amount * 180);
+      d3Graphs.drawBarGraph(data, cumulativeTotal);
 
       /*data[key].count++;
 
