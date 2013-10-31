@@ -95,3 +95,14 @@ a:hover {
 .importLabel {
   fill: white;
 }
+
+text.totalLabel {
+  font-size: 23px;
+  color: black;
+  fill: white;
+}
+
+text.importLabel {
+  color: black;
+  fill: #ffa90b;
+}
