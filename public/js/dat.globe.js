@@ -11,6 +11,15 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
+function log10(val) {
+  return Math.log(val) / Math.LN10;
+}
+
+function clamp(x, min, max) {
+  return Math.min(Math.max(x, min), max);
+}
+
+
 var DAT = DAT || {};
 
 var highlightCountry;
@@ -19,7 +28,7 @@ var incSpike;
 DAT.Globe = function(container, colorFn) {
   colorFn = colorFn || function(x) {
     var c = new THREE.Color();
-    c.setHSV( x, 1.0, 1.0 );
+    c.setHSV( 0.2 - x, 1.0, 1.0 );
     return c;
   };
 
@@ -106,14 +115,11 @@ DAT.Globe = function(container, colorFn) {
   };
 
   var camera, scene, sceneAtmosphere, renderer, w, h;
-  var vector, mesh, atmosphere, point;
-  var particleGeo, particleColors;
+  var mesh, atmosphere;
 
   var lookupCanvas, lookupTexture;
 
   var overRenderer;
-
-  var imgDir = '/images/';
 
   var curZoomSpeed = 0;
   var zoomSpeed = 50;
@@ -127,20 +133,17 @@ DAT.Globe = function(container, colorFn) {
   var padding = 40;
   var PI_HALF = Math.PI / 2;
 
-  function clamp(x, min, max) {
-    return Math.min(Math.max(x, min), max);
-  }
-
   var higlightedCountries = {};
 
   Object.keys(countryColorMap).forEach(function (countryCode) {
-    higlightedCountries[countryCode] = { amount: 0, h: 0, l: 0 };
+    higlightedCountries[countryCode] = { count: 0, amount: 0, h: 0, l: 0 };
   });
 
   highlightCountry = function(countryCode, amount) {
     var country = higlightedCountries[countryCode];
+    country.count++;
     country.amount += amount;
-    country.h = clamp(Math.floor(Math.log(country.amount) * 20), 0, 240);
+    country.h = clamp(log10(country.amount) * 48, 0, 240);
     country.l = 100;
   }
 
@@ -177,48 +180,44 @@ DAT.Globe = function(container, colorFn) {
       geometry = spike.mesh.geometry;
       spike.count++;
     }
-    spike.mesh.scale.z = -Math.sqrt(spike.count) * 3;
-    var redAt = 200;
+    spike.mesh.scale.z = -(log10(spike.count) * 25 - 10);
     for (var i = 0; i < geometry.faces.length; i++) {
-      geometry.faces[i].color = colorFn(clamp((redAt - spike.count) / (5 * redAt), 0, 0.2)); // 0.0 -> 0.2
+      geometry.faces[i].color = colorFn(clamp(log10(spike.count) * (0.2 / 3), 0, 0.2)); // 0.0 -> 0.2
     }
     geometry.colorsNeedUpdate = true;
     spike.mesh.updateMatrix();
   }
 
-  function init() {
-    container.style.color = '#fff';
-    container.style.font = '13px/20px Arial, sans-serif';
+  function animateCountries() {
+    var ctx = lookupCanvas.getContext('2d');
+    ctx.clearRect(0, 0, 256, 10);
+    ctx.fillStyle = 'rgb(10, 10, 40)';
+    ctx.fillRect(0, 0, 1, 1);
+    Object.keys(higlightedCountries).forEach(function (countryCode) {
+      var country = higlightedCountries[countryCode];
+      var fillCSS = 'hsl(' + (240 - country.h) + ', 50%, ' + country.l + '%)';
+      ctx.fillStyle = fillCSS;
+      var colorIndex = countryColorMap[countryCode];
+      ctx.fillRect(colorIndex, 0, 1, 10);
+      if (country.l > 50) {
+        country.l -= 2;
+        lookupTexture.needsUpdate = true;
+      }
+    });
+  }
 
-    var shader, uniforms, material;
-    w = container.offsetWidth || window.innerWidth;
-    h = container.offsetHeight || window.innerHeight;
-
-    camera = new THREE.PerspectiveCamera( 30, w / h, 1, 10000);
-    camera.position.z = distance;
-
-    vector = new THREE.Vector3();
-
-    scene = new THREE.Scene();
-    sceneAtmosphere = new THREE.Scene();
-
-    var planetGeometry = new THREE.SphereGeometry(200, 40, 30);
-    planetGeometry.dynamic = true;
-
-    /*setTimeout(function () {
-      geometry.vertices.forEach(function (v) { v.x = 0; v.y = 0; v.z = 0; })
-      geometry.verticesNeedUpdate = true;
-    }, 2000);*/
+  function initEarth() {
+    var earthGeometry = new THREE.SphereGeometry(200, 40, 30);
+    earthGeometry.dynamic = true;
 
     shader = Shaders['earth-indexed'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
-    //uniforms['texture'].value = THREE.ImageUtils.loadTexture(imgDir + 'map_outline.png');
-    var outlineTexture = THREE.ImageUtils.loadTexture(imgDir + 'map_outline.png');
+    var outlineTexture = THREE.ImageUtils.loadTexture('/images/map_outline.png');
     outlineTexture.wrapS = THREE.RepeatWrapping;
     uniforms['outlineTexture'].value = outlineTexture;
 
-    var indexedTexture = THREE.ImageUtils.loadTexture(imgDir + 'map_indexed.png');
+    var indexedTexture = THREE.ImageUtils.loadTexture('/images/map_indexed.png');
     indexedTexture.wrapS = THREE.RepeatWrapping;
     indexedTexture.magFilter = THREE.NearestFilter;
     indexedTexture.minFilter = THREE.NearestFilter;
@@ -239,7 +238,7 @@ DAT.Globe = function(container, colorFn) {
       fragmentShader: shader.fragmentShader
     });
 
-    mesh = new THREE.Mesh(planetGeometry, material);
+    mesh = new THREE.Mesh(earthGeometry, material);
     scene.add(mesh);
 
     shader = Shaders['atmosphere'];
@@ -252,14 +251,29 @@ DAT.Globe = function(container, colorFn) {
       side: THREE.BackSide
     });
 
-    mesh = new THREE.Mesh(planetGeometry, material);
+    mesh = new THREE.Mesh(earthGeometry, material);
     mesh.scale.x = mesh.scale.y = mesh.scale.z = 1.1;
     sceneAtmosphere.add(mesh);
+  }
 
-    var geometry = new THREE.CubeGeometry(0.75, 0.75, 1, 1, 1, 1, undefined, { px: true, nx: true, py: true, ny: true, pz: false, nz: true});
-    geometry.applyMatrix( new THREE.Matrix4().makeTranslation(0,0,0.5) );
+  //
+  // Largely unchanged below here.
+  //
+  function init() {
+    container.style.color = '#fff';
+    container.style.font = '13px/20px Arial, sans-serif';
 
-    point = new THREE.Mesh(geometry);
+    var shader, uniforms, material;
+    w = container.offsetWidth || window.innerWidth;
+    h = container.offsetHeight || window.innerHeight;
+
+    camera = new THREE.PerspectiveCamera( 30, w / h, 1, 10000);
+    camera.position.z = distance;
+
+    scene = new THREE.Scene();
+    sceneAtmosphere = new THREE.Scene();
+
+    initEarth();
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.autoClear = false;
@@ -283,81 +297,6 @@ DAT.Globe = function(container, colorFn) {
       overRenderer = false;
     }, false);
   }
-
-  /*addData = function(data, opts) {
-    var lat, lng, size, color, i, step, colorFnWrapper;
-
-    opts.format = opts.format || 'magnitude'; // other option is 'legend'
-    console.log(opts.format);
-    if (opts.format === 'magnitude') {
-      step = 3;
-      colorFnWrapper = function(data, i) { return colorFn(data[i+2]); }
-    } else if (opts.format === 'legend') {
-      step = 4;
-      colorFnWrapper = function(data, i) { return colorFn(data[i+3]); }
-    } else {
-      throw('error: format not supported: '+opts.format);
-    }
-
-    var subgeo = new THREE.Geometry();
-
-    for (i = 0; i < data.length; i += step) {
-      lat = data[i];
-      lng = data[i + 1];
-      color = colorFnWrapper(data,i);
-      size = data[i + 2];
-      size = size*200;
-      addPoint(lat, lng, size, color, subgeo, i === (data.length - 3));
-    }
-
-    this._baseGeometry = subgeo;
-  };
-
-  function addPoint(lat, lng, size, color, subgeo, rotate) {
-    var phi = (90 - lat) * Math.PI / 180;
-    var theta = (180 - lng) * Math.PI / 180;
-
-    point.position.x = 200 * Math.sin(phi) * Math.cos(theta);
-    point.position.y = 200 * Math.cos(phi);
-    point.position.z = 200 * Math.sin(phi) * Math.sin(theta);
-    point.lookAt(mesh.position);
-
-    point.scale.z = -size;
-    point.updateMatrix();
-
-    for (var i = 0; i < point.geometry.faces.length; i++) {
-      point.geometry.faces[i].color = color;
-    }
-
-    THREE.GeometryUtils.merge(subgeo, point);
-  }
-
-  function createPoints() {
-    var points;
-
-    if (!this._baseGeometry) return;
-
-    if (this._baseGeometry.morphTargets.length < 8) {
-      var padding = 8-this._baseGeometry.morphTargets.length;
-
-      for(var i=0; i<=padding; i++) {
-        this._baseGeometry.morphTargets.push({'name': 'morphPadding'+i, vertices: this._baseGeometry.vertices});
-      }
-    }
-
-    points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      vertexColors: THREE.FaceColors,
-      morphTargets: true
-    }));
-
-    this.points = points;
-    scene.add(this.points);
-  }
-
-  function removeData() {
-    if (this.points) scene.remove(this.points);
-  }*/
 
   function onMouseDown(event) {
     event.preventDefault();
@@ -438,21 +377,7 @@ DAT.Globe = function(container, colorFn) {
   function animate() {
     requestAnimationFrame(animate);
 
-    var ctx = lookupCanvas.getContext('2d');
-    ctx.clearRect(0, 0, 256, 10);
-    ctx.fillStyle = 'rgb(10, 10, 40)';
-    ctx.fillRect(0, 0, 1, 1);
-    Object.keys(higlightedCountries).forEach(function (countryCode) {
-      var country = higlightedCountries[countryCode];
-      var fillCSS = 'hsl(' + (240 - country.h) + ', 25%, ' + country.l + '%)';
-      ctx.fillStyle = fillCSS;
-      var colorIndex = countryColorMap[countryCode];
-      ctx.fillRect(colorIndex, 0, 1, 10);
-      if (country.l > 50) {
-        country.l -= 2;
-        lookupTexture.needsUpdate = true;
-      }
-    });
+    animateCountries();
 
     render();
   }
@@ -469,8 +394,6 @@ DAT.Globe = function(container, colorFn) {
     camera.position.z = distance * Math.cos(rotation.x) * Math.cos(rotation.y);
     camera.lookAt(scene.position);
 
-    vector.copy(camera.position);
-
     renderer.clear();
     renderer.render(scene, camera);
     renderer.render(sceneAtmosphere, camera);
@@ -479,9 +402,6 @@ DAT.Globe = function(container, colorFn) {
   init();
 
   this.animate = animate;
-  /*this.addData = addData;
-  this.createPoints = createPoints;
-  this.removeData = removeData;*/
   this.renderer = renderer;
   this.scene = scene;
 

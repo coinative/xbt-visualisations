@@ -42,5 +42,5 @@ ReplayBroadcaster.prototype.start = function () {
 
     console.log('SENDING', payload);
     this.primus.write(payload);
-  }.bind(this), 1);
+  }.bind(this), 5);
 };
