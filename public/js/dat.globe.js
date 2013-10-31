@@ -31,6 +31,7 @@ function coordinateToPosition(lat, long) {
 
 var DAT = DAT || {};
 
+var highlightedCountries = {};
 var highlightCountry;
 var incSpike;
 
@@ -128,14 +129,13 @@ DAT.Globe = function(container, colorFn) {
   var camera, scene, sceneAtmosphere, renderer, w, h;
   var earth, atmosphere;
 
-  var higlightedCountries = {};
 
   Object.keys(countryColorMap).forEach(function (countryCode) {
-    higlightedCountries[countryCode] = { count: 0, amount: 0, h: 0, l: 0 };
+    highlightedCountries[countryCode] = { count: 0, amount: 0, h: 0, l: 0 };
   });
 
   highlightCountry = function(countryCode, amount) {
-    var country = higlightedCountries[countryCode];
+    var country = highlightedCountries[countryCode];
     country.count++;
     country.amount += amount;
     country.h = clamp(log10(country.amount) * 48, 0, 240);
@@ -186,8 +186,8 @@ DAT.Globe = function(container, colorFn) {
     ctx.clearRect(0, 0, 256, 10);
     ctx.fillStyle = 'rgb(10, 10, 40)';
     ctx.fillRect(0, 0, 1, 1);
-    Object.keys(higlightedCountries).forEach(function (countryCode) {
-      var country = higlightedCountries[countryCode];
+    Object.keys(highlightedCountries).forEach(function (countryCode) {
+      var country = highlightedCountries[countryCode];
       var fillCSS = 'hsl(' + (240 - country.h) + ', 50%, ' + country.l + '%)';
       ctx.fillStyle = fillCSS;
       var colorIndex = countryColorMap[countryCode];

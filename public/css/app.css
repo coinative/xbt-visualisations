@@ -71,3 +71,38 @@ a:hover {
   background-color: transparent;
   cursor: pointer;
 }
+
+.overlayCountires {
+  z-index: 10001;
+}
+
+.noPointers {
+  pointer-events: none;
+}
+
+.totals.US {
+  fill: #4679c1;
+}
+
+.totals.GB {
+  fill: #44b2d4;
+}
+
+.barGraphLabelBG {
+  fill: rgba(0,0,0,0.8);
+}
+
+.importLabel {
+  fill: white;
+}
+
+text.totalLabel {
+  font-size: 23px;
+  color: black;
+  fill: white;
+}
+
+text.importLabel {
+  color: black;
+  fill: #ffa90b;
+}

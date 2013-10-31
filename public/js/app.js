@@ -11,18 +11,40 @@ var APP = {
 
     var container = document.getElementById('container');
     var globe = new DAT.Globe(container);
-    var data = {};
+    var data = [];
+    var cumulativeTotal = 0;
+    var changed = false;
 
-    /*function animate() {
-      requestAnimationFrame(animate);
-    }
-
-    animate();*/
+    setInterval(function () {
+      if (!changed) return;
+      changed = false;
+      data.sort(function (a, b) {
+        return a.amount < b.amount ? -1 : a.amount > b.amount ? 1 : 0;
+      });
+      d3Graphs.drawBarGraph(data, cumulativeTotal);
+    }, 500)
 
     var primus = Primus.connect();
     primus.on('data', function (tx) {
       highlightCountry(tx.country,  tx.amount);
       incSpike(tx.latitude, tx.longitude);
+
+      var country = _.find(data, function (d) {
+        return d.country === tx.country;
+      });
+
+      if (!country) {
+        country = { country: tx.country, amount: 0 };
+        data.push(country);
+      }
+
+      changed = true;
+
+      country.amount += Math.round(tx.amount * 130);
+      //console.log(tx.country, country.amount);
+      cumulativeTotal += Math.round(tx.amount * 130);
+      //d3Graphs.drawBarGraph(data, cumulativeTotal);
+
 
       /*data[key].count++;
 
