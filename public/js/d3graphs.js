@@ -9,10 +9,7 @@ var d3Graphs = {
   txLimit: 300,
   drawBarGraph: function (countryTotals, max) {
     max = 0;
-    var totals = _.where(countryTotals, function (d) {
-      return d.amount >= d3Graphs.txLimit;
-    });
-
+    var totals = countryTotals.slice(-10);
     for(var i = 0; i < totals.length; i++) {
       max += totals[i].amount;
     }

@@ -13,8 +13,11 @@ var APP = {
     var globe = new DAT.Globe(container);
     var data = [];
     var cumulativeTotal = 0;
+    var changed = false;
 
     setInterval(function () {
+      if (!changed) return;
+      changed = false;
       data.sort(function (a, b) {
         return a.amount < b.amount ? -1 : a.amount > b.amount ? 1 : 0;
       });
@@ -34,6 +37,8 @@ var APP = {
         country = { country: tx.country, amount: 0 };
         data.push(country);
       }
+
+      changed = true;
 
       country.amount += Math.round(tx.amount * 130);
       //console.log(tx.country, country.amount);
