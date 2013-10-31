@@ -19,6 +19,15 @@ function clamp(x, min, max) {
   return Math.min(Math.max(x, min), max);
 }
 
+function coordinateToPosition(lat, long) {
+  var phi = (90 - lat) * Math.PI / 180;
+  var theta = (180 - long) * Math.PI / 180;
+  return {
+    x: 200 * Math.sin(phi) * Math.cos(theta),
+    y: 200 * Math.cos(phi),
+    z: 200 * Math.sin(phi) * Math.sin(theta)
+  };
+}
 
 var DAT = DAT || {};
 
@@ -114,24 +123,10 @@ DAT.Globe = function(container, colorFn) {
     }
   };
 
-  var camera, scene, sceneAtmosphere, renderer, w, h;
-  var mesh, atmosphere;
-
   var lookupCanvas, lookupTexture;
 
-  var overRenderer;
-
-  var curZoomSpeed = 0;
-  var zoomSpeed = 50;
-
-  var mouse = { x: 0, y: 0 }, mouseOnDown = { x: 0, y: 0 };
-  var rotation = { x: 0, y: 0 },
-      target = { x: Math.PI*3/2, y: Math.PI / 6.0 },
-      targetOnDown = { x: 0, y: 0 };
-
-  var distance = 100000, distanceTarget = 100000;
-  var padding = 40;
-  var PI_HALF = Math.PI / 2;
+  var camera, scene, sceneAtmosphere, renderer, w, h;
+  var earth, atmosphere;
 
   var higlightedCountries = {};
 
@@ -163,13 +158,11 @@ DAT.Globe = function(container, colorFn) {
         count: 1
       };
 
-      var phi = (90 - latitude) * Math.PI / 180;
-      var theta = (180 - longitude) * Math.PI / 180;
-
-      spike.mesh.position.x = 200 * Math.sin(phi) * Math.cos(theta);
-      spike.mesh.position.y = 200 * Math.cos(phi);
-      spike.mesh.position.z = 200 * Math.sin(phi) * Math.sin(theta);
-      spike.mesh.lookAt(mesh.position);
+      var position = coordinateToPosition(latitude, longitude);
+      spike.mesh.position.x = position.x;
+      spike.mesh.position.y = position.y;
+      spike.mesh.position.z = position.z;
+      spike.mesh.lookAt(earth.position);
 
       for (var i = 0; i < geometry.faces.length; i++) {
         geometry.faces[i].color = colorFn(0.5);
@@ -238,8 +231,8 @@ DAT.Globe = function(container, colorFn) {
       fragmentShader: shader.fragmentShader
     });
 
-    mesh = new THREE.Mesh(earthGeometry, material);
-    scene.add(mesh);
+    earth = new THREE.Mesh(earthGeometry, material);
+    scene.add(earth);
 
     shader = Shaders['atmosphere'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
@@ -251,14 +244,30 @@ DAT.Globe = function(container, colorFn) {
       side: THREE.BackSide
     });
 
-    mesh = new THREE.Mesh(earthGeometry, material);
-    mesh.scale.x = mesh.scale.y = mesh.scale.z = 1.1;
-    sceneAtmosphere.add(mesh);
+    atmosphere = new THREE.Mesh(earthGeometry, material);
+    atmosphere.scale.x = atmosphere.scale.y = atmosphere.scale.z = 1.1;
+    sceneAtmosphere.add(atmosphere);
   }
 
   //
   // Largely unchanged below here.
   //
+  var overRenderer;
+
+  var curZoomSpeed = 0;
+  var zoomSpeed = 50;
+
+  var mouse = { x: 0, y: 0 };
+  var mouseOnDown = { x: 0, y: 0 };
+  var rotation = { x: 0, y: 0 };
+  var target = { x: Math.PI * (3 / 2), y: Math.PI / 6.0 };
+  var targetOnDown = { x: 0, y: 0 };
+
+  var distance = 100000;
+  var distanceTarget = 100000;
+  var padding = 40;
+  var PI_HALF = Math.PI / 2;
+
   function init() {
     container.style.color = '#fff';
     container.style.font = '13px/20px Arial, sans-serif';
@@ -267,7 +276,7 @@ DAT.Globe = function(container, colorFn) {
     w = container.offsetWidth || window.innerWidth;
     h = container.offsetHeight || window.innerHeight;
 
-    camera = new THREE.PerspectiveCamera( 30, w / h, 1, 10000);
+    camera = new THREE.PerspectiveCamera(30, w / h, 1, 10000);
     camera.position.z = distance;
 
     scene = new THREE.Scene();
