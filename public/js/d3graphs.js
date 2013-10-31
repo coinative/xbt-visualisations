@@ -23,13 +23,13 @@ var d3Graphs = {
     var rects = this.barGraphSVG.selectAll('rect.totals').data(totals);
     this.cTotal = 0;
     rects.enter().append('rect').attr('style', function (d) {
-      var color = d3Graphs.countryColorMap[d.country];
-      return 'fill: rgb(0, 0, ' + color + ');'
+      var country = highlightedCountries[d.country];
+      return 'fill: hsl(' + (240 - country.h) + ', 50%, 50%); stroke: rgb(0, 0, 0);';
     }).attr('x', 0).attr('width', this.barWidth);
 
     rects.attr('y', function (d) {
       var value = d3Graphs.barGraphHeight - d3Graphs.barGraphBottomPadding - d3Graphs.cTotal - yScale(d.amount);
-      console.log(value);
+      //console.log(value);
       d3Graphs.cTotal += yScale(d.amount);
       return value;
     }).attr('height', function (d) {
@@ -132,7 +132,7 @@ var d3Graphs = {
 
 function abbreviateNumber(value) {
   var newValue = value;
-  console.log('ABBREV1');
+  //console.log('ABBREV1');
   if (value >= 1000) {
     var suffixes = ["", "K", "M", "B", "T"];
     var suffixNum = Math.floor(("" + value).length / 3);
@@ -147,6 +147,6 @@ function abbreviateNumber(value) {
     if (shortValue % 1 != 0) shortNum = shortValue.toFixed(1);
     newValue = shortValue + suffixes[suffixNum];
   }
-  console.log('ABBREV', '£' + newValue);
+  //console.log('ABBREV', '£' + newValue);
   return '£' + newValue;
 }

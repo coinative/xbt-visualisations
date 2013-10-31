@@ -14,11 +14,12 @@ var APP = {
     var data = [];
     var cumulativeTotal = 0;
 
-    /*function animate() {
-      requestAnimationFrame(animate);
-    }
-
-    animate();*/
+    setInterval(function () {
+      data.sort(function (a, b) {
+        return a.amount < b.amount ? -1 : a.amount > b.amount ? 1 : 0;
+      });
+      d3Graphs.drawBarGraph(data, cumulativeTotal);
+    }, 500)
 
     var primus = Primus.connect();
     primus.on('data', function (tx) {
@@ -34,10 +35,11 @@ var APP = {
         data.push(country);
       }
 
-      country.amount += Math.round(tx.amount * 180);
-      console.log(tx.country, country.amount);
-      cumulativeTotal += Math.round(tx.amount * 180);
-      d3Graphs.drawBarGraph(data, cumulativeTotal);
+      country.amount += Math.round(tx.amount * 130);
+      //console.log(tx.country, country.amount);
+      cumulativeTotal += Math.round(tx.amount * 130);
+      //d3Graphs.drawBarGraph(data, cumulativeTotal);
+
 
       /*data[key].count++;
 
