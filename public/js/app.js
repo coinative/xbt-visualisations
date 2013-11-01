@@ -20,7 +20,7 @@ var APP = {
       data.sort(function (a, b) {
         return a.amount < b.amount ? -1 : a.amount > b.amount ? 1 : 0;
       });
-      d3Graphs.drawBarGraph(data);
+      APP.d3Graphs.drawBarGraph(data);
     }, 500)
 
     var primus = Primus.connect();

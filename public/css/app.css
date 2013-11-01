@@ -98,7 +98,7 @@ a:hover {
   fill: rgba(0,0,0,0.8);
 }
 
-.importLabel {
+.countryTotal {
   fill: white;
 }
 
@@ -108,7 +108,7 @@ text.totalLabel, text.countTotalLabel {
   fill: white;
 }
 
-text.importLabel, text.countLabel {
+text.captionLabel, text.countLabel {
   color: black;
   fill: #ffa90b;
 }
