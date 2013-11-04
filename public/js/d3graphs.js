@@ -46,6 +46,7 @@ APP.d3Graphs = function () {
 
     rects.attr('y', function (d) {
       var value = _barGraphHeight - _barGraphBottomPadding - yTotal - yScale(d.amount);
+      console.log('VALUE', value);
       yTotal += yScale(d.amount);
       return value;
     }).attr('height', function (d) {
@@ -76,13 +77,11 @@ APP.d3Graphs = function () {
 
   function createLargeLabel(label) {
     label.append('text').text(function(d) {
-      console.log(abbreviateNumber(d.amount));
       return '£' + abbreviateNumber(d.amount);
     }).attr('text-anchor', 'end').attr('font-size', function(d) {
       return 20;
     }).attr('y', -7);
     label.append('text').text(function(d) {
-      console.log(abbreviateNumber(d.country));
       return d.country;
     }).attr('text-anchor', 'end').attr('y', 8).attr('font-size', function (d) {
       return 10;
@@ -95,14 +94,10 @@ APP.d3Graphs = function () {
     var mediumLabelSize = 40;
     var countryTotalLabels = _barGraphSVG.selectAll("g.countryTotal").data(totals);
 
-    countryTotalLabels.enter().append("g").attr('class', function(d) {
-      console.log('CLASS')
-      return 'countryTotal ' + d.country;
-    });
+    countryTotalLabels.enter().append("g").attr('class', 'countryTotal');
     countryTotalLabels.attr('transform', function(d) {
-      console.log('TRANSFORM')
       var value = _barGraphHeight - _barGraphBottomPadding - totalYScale - yScale(d.amount) / 2;
-      totalYScale = yScale(d.amount);
+      totalYScale += yScale(d.amount);
       var translate = 'translate(' + (_barGraphWidth / 2 - 25) + "," + value + ")";
       return translate;
     }).attr('display', function(d) {
@@ -159,8 +154,6 @@ APP.d3Graphs = function () {
       var max = totals.reduce(function (m, c) { return m + c.amount; }, 0);
       var maxAll = countryTotals.reduce(function (m, c) { return m + c.amount; }, 0);
       var count = countryTotals.reduce(function (m, c) { return m + c.count; }, 0);
-      var minImExAmount = Number.MAX_VALUE;
-      var maxImExAmount = Number.MIN_VALUE;
       var yScale = d3.scale.linear()
         .domain([0, max])
         .range([0, _barGraphHeight - _barGraphBottomPadding - _barGraphTopPadding]);

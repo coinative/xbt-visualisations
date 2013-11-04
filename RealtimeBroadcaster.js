@@ -24,12 +24,6 @@ BlockBroadcaster.prototype.start = function () {
     var location = maxmind.getLocation(data.x.relayed_by);
 
     if (!location) return;
-    /*var location = {
-      latitude: 51.50722,
-      longitude: -0.12750,
-      city: 'London',
-      countryCode: 'GB'
-    };*/
 
     // create JSON object
     var payLoad = {
@@ -58,7 +52,6 @@ BlockBroadcaster.prototype.start = function () {
   });
 
   setInterval(function () {
-    //self.primus.write('hello');
     ws.ping(null);
   }, 20000);
 };
