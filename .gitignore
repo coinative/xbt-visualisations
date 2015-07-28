@@ -1,4 +1,5 @@
 *.dat
 .DS_Store
 node_modules/
+geolite/
 tx.json

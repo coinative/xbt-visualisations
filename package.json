@@ -13,5 +13,11 @@
     "ws": "~0.4.31",
     "async": "~0.2.9",
     "lodash": "~2.2.1"
+  },
+  "devDependencies": {
+    "maxmind-geolite-mirror": "^1.0.5"
+  },
+  "scripts": {
+    "install": "mkdir -p ./geolite && MAXMIND_DB_DIR=./geolite/ ./node_modules/.bin/maxmind-geolite-mirror"
   }
 }

@@ -19,4 +19,4 @@ server.on('listening', function () {
   }
 });
 server.listen(port);
-console.log('app is up and serving pages in', htmlDir);
+console.log('app is up and serving pages in', htmlDir, port);

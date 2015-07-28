@@ -8,11 +8,11 @@ var BlockBroadcaster = module.exports = function (server) {
     parser: 'JSON'
   });
 
-  maxmind.init('./GeoLiteCity.dat');
+  maxmind.init('./geolite/GeoIPCity.dat');
 }
 
 BlockBroadcaster.prototype.start = function () {
-  var ws = new WebSocket('ws://ws.blockchain.info/inv');
+  var ws = new WebSocket('wss://ws.blockchain.info/inv');
 
   ws.on('open', function () {
     ws.send(JSON.stringify({ op: 'unconfirmed_sub' }));

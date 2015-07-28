@@ -17,7 +17,7 @@ var ReplayBroadcaster = module.exports = function (server) {
       return memo + parseInt(out.value, 10);
     }, 0);
   }, 0));*/
-  maxmind.init('./GeoLiteCity.dat');
+  maxmind.init('./geolite/GeoIPCity.dat');
 }
 
 ReplayBroadcaster.prototype.start = function () {
