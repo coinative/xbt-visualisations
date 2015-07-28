@@ -39,7 +39,7 @@ var APP = {
 
       changed = true;
 
-      country.amount += Math.round(tx.amount * 130);
+      country.amount += tx.amountGBP;
       country.count++;
     });
 
