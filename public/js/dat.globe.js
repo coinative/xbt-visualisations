@@ -307,6 +307,30 @@ DAT.Globe = function(container, colorFn) {
     container.addEventListener('mouseout', function() {
       overRenderer = false;
     }, false);
+
+    container.addEventListener('touchstart', onTouchStart, false);
+  }
+
+  var touchesInAction = {};
+
+  var pinchDelta = 0;
+
+  function onTouchStart(event) {
+    event.preventDefault();
+
+    container.addEventListener('touchmove', onTouchMove, false);
+    container.addEventListener('touchend', onTouchEnd, false);
+    container.addEventListener('touchleave', onTouchLeave, false);
+
+    var touches = event.changedTouches;
+
+    mouseOnDown.x = - touches[0].pageX;
+    mouseOnDown.y =   touches[0].pageY;
+
+    targetOnDown.x = target.x;
+    targetOnDown.y = target.y;
+
+    container.style.cursor = 'move';
   }
 
   function onMouseDown(event) {
@@ -336,6 +360,52 @@ DAT.Globe = function(container, colorFn) {
 
     target.y = target.y > PI_HALF ? PI_HALF : target.y;
     target.y = target.y < - PI_HALF ? - PI_HALF : target.y;
+  }
+
+  function onTouchMove(event) {
+    var zoomDamp = distance/1000;
+
+    var touches = event.changedTouches;
+
+    if(touches.length == 1){
+      target.x = targetOnDown.x + (-touches[0].pageX - mouseOnDown.x) * 0.005 * zoomDamp;
+      target.y = targetOnDown.y + (touches[0].pageY - mouseOnDown.y) * 0.005 * zoomDamp;
+
+      target.y = target.y > PI_HALF ? PI_HALF : target.y;
+      target.y = target.y < - PI_HALF ? - PI_HALF : target.y;
+    }
+
+    if(touches.length == 2){
+      var a={}, b={};
+      a.x = - touches[0].pageX;
+      a.y =   touches[0].pageY;
+
+      b.x = - touches[1].pageX;
+      b.y =   touches[1].pageY;
+
+      var newDelta = Math.sqrt((a.x -= b.x) * a.x + (a.y -= b.y) * a.y);
+      if(!pinchDelta){
+        pinchDelta = newDelta;
+      }
+
+      zoom((newDelta - pinchDelta) * 0.3);
+    }
+
+  }
+
+  function onTouchEnd(event) {
+    pinchDelta = 0;
+
+    container.removeEventListener('touchmove', onTouchMove, false);
+    container.removeEventListener('touchend', onTouchEnd, false);
+    container.removeEventListener('touchleave', onTouchLeave, false);
+    container.style.cursor = 'auto';
+  }
+
+  function onTouchLeave(event) {
+    container.removeEventListener('touchmove', onTouchMove, false);
+    container.removeEventListener('touchend', onTouchEnd, false);
+    container.removeEventListener('touchleave', onTouchLeave, false);
   }
 
   function onMouseUp(event) {
@@ -422,4 +492,3 @@ DAT.Globe = function(container, colorFn) {
 
   return this;
 };
-
